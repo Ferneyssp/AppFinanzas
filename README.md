@@ -384,9 +384,8 @@ Este proyecto fue desarrollado como parte del examen práctico de la asignatura:
 
 ## 👨‍💻 Autores
 
-**Ferney Santander**
-
-**Yeritza Palacio**
+*Ferney Santander
+*Yeritza Palacio
 
 Proyecto académico desarrollado con Flutter y Dart.
 
