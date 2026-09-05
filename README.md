@@ -1,0 +1,2 @@
+# AppFinanzas
+Aplicación móvil de finanzas personales desarrollada en Flutter como proyecto práctico de la asignatura Desarrollo Móvil Multiplataforma del programa de Ingeniería de Software de la Universidad de Santander. 
