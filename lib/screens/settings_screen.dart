@@ -69,17 +69,22 @@ class SettingsScreen extends StatelessWidget {
                           color: colores.primario.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: seleccionado ? colores.primario : Colors.transparent,
+                            color: seleccionado
+                                ? colores.primario
+                                : Colors.transparent,
                             width: 2,
                           ),
                         ),
                         child: Column(
                           children: [
-                            CircleAvatar(radius: 14, backgroundColor: colores.primario),
+                            CircleAvatar(
+                                radius: 14, backgroundColor: colores.primario),
                             const SizedBox(height: 6),
                             Text(
-                              paleta.name[0].toUpperCase() + paleta.name.substring(1),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              paleta.name[0].toUpperCase() +
+                                  paleta.name.substring(1),
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -95,8 +100,9 @@ class SettingsScreen extends StatelessWidget {
             titulo: 'Datos',
             child: Column(
               children: [
-                _BotonDatosDemo(),
-                const SizedBox(height: 12),
+                // Apartado de datos demo oculto para la versión final (preservado para pruebas futuras):
+                // _BotonDatosDemo(),
+                // const SizedBox(height: 12),
                 _BotonEliminarTodo(),
               ],
             ),
@@ -104,7 +110,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'Finanzas Student · v1.0.0',
+              'FinanzasApp · v1.0.0',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -125,7 +131,11 @@ class _Seccion extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titulo, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        Text(titulo,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 10),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: child)),
       ],
@@ -142,7 +152,8 @@ class _CampoAlias extends StatefulWidget {
 }
 
 class _CampoAliasState extends State<_CampoAlias> {
-  late final TextEditingController _ctrl = TextEditingController(text: widget.aliasActual);
+  late final TextEditingController _ctrl =
+      TextEditingController(text: widget.aliasActual);
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +198,8 @@ class _CampoMesState extends State<_CampoMes> {
   @override
   void initState() {
     super.initState();
-    _nombreCtrl = TextEditingController(text: widget.settings.nombreMesMostrado());
+    _nombreCtrl =
+        TextEditingController(text: widget.settings.nombreMesMostrado());
     _emojiCtrl = TextEditingController(text: widget.settings.emojiMes);
   }
 
@@ -225,7 +237,8 @@ class _CampoMesState extends State<_CampoMes> {
         const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerRight,
-          child: FilledButton(onPressed: _guardar, child: const Text('Guardar')),
+          child:
+              FilledButton(onPressed: _guardar, child: const Text('Guardar')),
         ),
       ],
     );
@@ -237,7 +250,8 @@ class _OpcionTema extends StatelessWidget {
   final bool seleccionado;
   final VoidCallback onTap;
 
-  const _OpcionTema({required this.label, required this.seleccionado, required this.onTap});
+  const _OpcionTema(
+      {required this.label, required this.seleccionado, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -252,12 +266,15 @@ class _OpcionTema extends StatelessWidget {
           border: Border.all(color: seleccionado ? color : Colors.black12),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600))),
+        child: Center(
+            child: Text(label,
+                style: const TextStyle(fontWeight: FontWeight.w600))),
       ),
     );
   }
 }
 
+// ignore: unused_element
 class _BotonDatosDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -271,7 +288,8 @@ class _BotonDatosDemo extends StatelessWidget {
           await finanzas.cargarDatosDemo();
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('✓ Datos de demostración agregados.')),
+              const SnackBar(
+                  content: Text('✓ Datos de demostración agregados.')),
             );
           }
         },
@@ -299,16 +317,21 @@ class _BotonEliminarTodo extends StatelessWidget {
               title: const Text('¿Eliminar todos los movimientos?'),
               content: const Text('Esta acción no se puede deshacer.'),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancelar')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Eliminar')),
               ],
             ),
           );
-          if (confirmar == true) {
+          if (confirmar == true && context.mounted) {
             await context.read<FinanceProvider>().eliminarTodosLosDatos();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Todos los movimientos fueron eliminados.')),
+                const SnackBar(
+                    content: Text('Todos los movimientos fueron eliminados.')),
               );
             }
           }

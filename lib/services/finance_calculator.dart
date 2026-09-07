@@ -34,6 +34,25 @@ class ResultadoValidacionEgreso {
         mensajeSecundario = montoMaximo;
 }
 
+/// Resultado de validar si un ingreso puede actualizarse o eliminarse.
+class ResultadoValidacionIngreso {
+  final bool esValido;
+  final String? mensajePrincipal;
+  final String? mensajeSecundario;
+
+  const ResultadoValidacionIngreso.valido()
+      : esValido = true,
+        mensajePrincipal = null,
+        mensajeSecundario = null;
+
+  const ResultadoValidacionIngreso.invalido({
+    required String mensaje,
+    required String montoMinimo,
+  })  : esValido = false,
+        mensajePrincipal = mensaje,
+        mensajeSecundario = montoMinimo;
+}
+
 /// Contiene toda la lógica de negocio financiera de la aplicación,
 /// deliberadamente separada de la interfaz y de la persistencia para
 /// que pueda probarse de forma aislada (unit tests) y reutilizarse
@@ -108,5 +127,50 @@ class FinanceCalculator {
       );
     }
     return const ResultadoValidacionEgreso.valido();
+  }
+
+  /// Valida si un ingreso existente puede actualizarse a [nuevoMonto] sin
+  /// que el total de ingresos quede por debajo del total de gastos
+  /// del mes activo.
+  static ResultadoValidacionIngreso validarActualizacionIngreso({
+    required double totalIngresosActuales,
+    required double totalEgresos,
+    required double montoIngresoOriginal,
+    required double nuevoMonto,
+  }) {
+    final otrosIngresos = totalIngresosActuales - montoIngresoOriginal;
+    final nuevoTotalIngresos = otrosIngresos + nuevoMonto;
+
+    if (nuevoTotalIngresos < totalEgresos) {
+      final minimoRequerido = totalEgresos - otrosIngresos;
+      final minimoPermitido = minimoRequerido < 0 ? 0.0 : minimoRequerido;
+      return ResultadoValidacionIngreso.invalido(
+        mensaje: 'No puedes actualizar este ingreso con este monto. '
+            'El total de ingresos no puede ser menor al total de gastos '
+            '(${CurrencyFormatter.format(totalEgresos)}).',
+        montoMinimo:
+            'Monto mínimo requerido para este ingreso: ${CurrencyFormatter.format(minimoPermitido)}',
+      );
+    }
+    return const ResultadoValidacionIngreso.valido();
+  }
+
+  /// Valida si un ingreso existente puede eliminarse sin que el total de
+  /// ingresos quede por debajo del total de gastos del mes activo.
+  static ResultadoValidacionIngreso validarEliminacionIngreso({
+    required double totalIngresosActuales,
+    required double totalEgresos,
+    required double montoIngresoEliminado,
+  }) {
+    final nuevoTotalIngresos = totalIngresosActuales - montoIngresoEliminado;
+    if (nuevoTotalIngresos < totalEgresos) {
+      return ResultadoValidacionIngreso.invalido(
+        mensaje: 'No puedes eliminar este ingreso porque el total de ingresos '
+            'quedaría por debajo del total de gastos '
+            '(${CurrencyFormatter.format(totalEgresos)}).',
+        montoMinimo: 'Gastos actuales: ${CurrencyFormatter.format(totalEgresos)}',
+      );
+    }
+    return const ResultadoValidacionIngreso.valido();
   }
 }

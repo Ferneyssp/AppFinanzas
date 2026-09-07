@@ -9,6 +9,8 @@ import '../widgets/budget_status_card.dart';
 import '../widgets/movement_tile.dart';
 import 'add_expense_screen.dart';
 import 'add_income_screen.dart';
+import 'edit_expense_screen.dart';
+import 'edit_income_screen.dart';
 import 'income_list_screen.dart';
 import 'movements_screen.dart';
 import 'voice_capture_screen.dart';
@@ -152,7 +154,19 @@ class DashboardScreen extends StatelessWidget {
                 ),
               )
             else
-              ...finanzas.recientes.map((m) => MovementTile(movimiento: m)),
+              ...finanzas.recientes.map(
+                (m) => MovementTile(
+                  movimiento: m,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => m.esEgreso
+                          ? EditExpenseScreen(movimiento: m)
+                          : EditIncomeScreen(movimiento: m),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -44,6 +45,11 @@ class VozService {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _disponible = false;
 
+  void Function(String textoParcial)? _onResultadoCallback;
+  void Function()? _onFinalizadoCallback;
+  bool _escuchandoActivo = false;
+  Timer? _safetyTimer;
+
   Future<bool> solicitarPermiso() async {
     final estado = await Permission.microphone.request();
     return estado.isGranted;
@@ -54,12 +60,35 @@ class VozService {
       onError: (error) {
         print('ERROR VOZ: ${error.errorMsg}');
         print('ERROR PERMANENTE: ${error.permanent}');
+        _manejarError(error);
       },
       onStatus: (status) {
         print('ESTADO VOZ: $status');
+        _manejarStatus(status);
       },
     );
     return _disponible;
+  }
+
+  void _notificarFinalizado() {
+    _safetyTimer?.cancel();
+    _safetyTimer = null;
+    if (_escuchandoActivo) {
+      _escuchandoActivo = false;
+      final cb = _onFinalizadoCallback;
+      _onFinalizadoCallback = null;
+      cb?.call();
+    }
+  }
+
+  void _manejarStatus(String status) {
+    if (status == 'notListening' || status == 'done') {
+      _notificarFinalizado();
+    }
+  }
+
+  void _manejarError(Object error) {
+    _notificarFinalizado();
   }
 
   bool get estaEscuchando => _speech.isListening;
@@ -71,11 +100,26 @@ class VozService {
     required void Function(String textoParcial) onResultado,
     required void Function() onFinalizado,
   }) async {
+    _onResultadoCallback = onResultado;
+    _onFinalizadoCallback = onFinalizado;
+    _escuchandoActivo = true;
+
+    _safetyTimer?.cancel();
+    // Temporizador de respaldo si el motor no notifica tras finalizar el tiempo máximo
+    _safetyTimer = Timer(const Duration(seconds: 13), () {
+      if (_escuchandoActivo) {
+        detener();
+        _notificarFinalizado();
+      }
+    });
+
     await _speech.listen(
       localeId: 'es_CO',
       onResult: (result) {
-        onResultado(result.recognizedWords);
-        if (result.finalResult) onFinalizado();
+        _onResultadoCallback?.call(result.recognizedWords);
+        if (result.finalResult) {
+          _notificarFinalizado();
+        }
       },
       listenFor: const Duration(seconds: 12),
       pauseFor: const Duration(seconds: 3),
@@ -83,6 +127,10 @@ class VozService {
   }
 
   Future<void> detener() async {
+    _safetyTimer?.cancel();
+    _safetyTimer = null;
+    _escuchandoActivo = false;
+    _onFinalizadoCallback = null;
     await _speech.stop();
   }
 

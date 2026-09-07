@@ -5,6 +5,7 @@ import '../models/movimiento.dart';
 import '../providers/finance_provider.dart';
 import '../utils/currency_formatter.dart';
 import '../widgets/movement_tile.dart';
+import 'edit_income_screen.dart';
 
 /// Pantalla dedicada a consultar los ingresos del mes activo,
 /// permitiendo ordenar por fecha y mostrando el total acumulado.
@@ -65,7 +66,18 @@ class _IncomeListScreenState extends State<IncomeListScreen> {
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: ingresos.length,
-                    itemBuilder: (context, index) => MovementTile(movimiento: ingresos[index]),
+                    itemBuilder: (context, index) {
+                      final m = ingresos[index];
+                      return MovementTile(
+                        movimiento: m,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditIncomeScreen(movimiento: m),
+                          ),
+                        ),
+                      );
+                    },
                   ),
           ),
         ],

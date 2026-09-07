@@ -6,6 +6,7 @@ import '../models/movimiento.dart';
 import '../providers/finance_provider.dart';
 import '../widgets/movement_tile.dart';
 import 'edit_expense_screen.dart';
+import 'edit_income_screen.dart';
 
 /// Historial completo de movimientos (ingresos y egresos) con filtros
 /// opcionales por tipo, categoría y fecha. El más reciente aparece
@@ -49,12 +50,27 @@ class _MovementsScreenState extends State<MovementsScreen> {
       ),
     );
     if (confirmar == true && m.id != null) {
-      await context.read<FinanceProvider>().eliminarMovimiento(m.id!);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Movimiento eliminado.')),
+      if (!context.mounted) return;
+      final resultado = await context.read<FinanceProvider>().intentarEliminarMovimiento(m);
+      if (!context.mounted) return;
+
+      if (!resultado.esValido) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('No se puede eliminar'),
+            content: Text('${resultado.mensajePrincipal}\n\n${resultado.mensajeSecundario}'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido')),
+            ],
+          ),
         );
+        return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Movimiento eliminado.')),
+      );
     }
   }
 
@@ -144,12 +160,14 @@ class _MovementsScreenState extends State<MovementsScreen> {
                       final m = movimientos[index];
                       return MovementTile(
                         movimiento: m,
-                        onTap: m.esEgreso
-                            ? () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => EditExpenseScreen(movimiento: m)),
-                                )
-                            : null,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => m.esEgreso
+                                ? EditExpenseScreen(movimiento: m)
+                                : EditIncomeScreen(movimiento: m),
+                          ),
+                        ),
                         onDelete: () => _confirmarEliminar(context, m),
                       );
                     },

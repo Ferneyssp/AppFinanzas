@@ -98,6 +98,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen>
 
   Future<void> _finalizarEscucha() async {
     if (!mounted) return;
+    if (_estado != _EstadoVoz.escuchando) return;
 
     // Guardamos una copia del texto antes de cambiar de estado.
     final texto = _textoReconocido.trim();

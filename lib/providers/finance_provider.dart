@@ -162,6 +162,74 @@ class FinanceProvider extends ChangeNotifier {
     return validacion;
   }
 
+  /// Permite actualizar un ingreso existente asegurando que el total de
+  /// ingresos no quede por debajo del total de gastos del mes activo.
+  Future<ResultadoValidacionIngreso> intentarActualizarIngreso({
+    required Movimiento original,
+    required String descripcion,
+    required String categoria,
+    required double monto,
+    required DateTime fecha,
+  }) async {
+    final ahora = DateTime.now();
+    final eraDelMesActivo =
+        original.fecha.year == ahora.year && original.fecha.month == ahora.month;
+    final seraDelMesActivo =
+        fecha.year == ahora.year && fecha.month == ahora.month;
+
+    if (eraDelMesActivo || seraDelMesActivo) {
+      final totalIngresosActual = totalIngresos;
+      final montoOriginalMes = eraDelMesActivo ? original.monto : 0.0;
+      final nuevoMontoMes = seraDelMesActivo ? monto : 0.0;
+
+      final validacion = FinanceCalculator.validarActualizacionIngreso(
+        totalIngresosActuales: totalIngresosActual,
+        totalEgresos: totalEgresos,
+        montoIngresoOriginal: montoOriginalMes,
+        nuevoMonto: nuevoMontoMes,
+      );
+      if (!validacion.esValido) return validacion;
+    }
+
+    final actualizado = original.copyWith(
+      descripcion: descripcion,
+      categoria: categoria,
+      monto: monto,
+      fecha: fecha,
+    );
+    await _db.actualizarMovimiento(actualizado);
+    final index = _movimientos.indexWhere((m) => m.id == original.id);
+    if (index != -1) _movimientos[index] = actualizado;
+    notifyListeners();
+    await _evaluarAlertaCritica();
+    return const ResultadoValidacionIngreso.valido();
+  }
+
+  /// Intenta eliminar un movimiento. Si es un ingreso del mes activo,
+  /// valida que los gastos restantes no superen los ingresos.
+  Future<ResultadoValidacionIngreso> intentarEliminarMovimiento(Movimiento m) async {
+    final ahora = DateTime.now();
+    final esDelMesActivo =
+        m.fecha.year == ahora.year && m.fecha.month == ahora.month;
+
+    if (m.esIngreso && esDelMesActivo) {
+      final validacion = FinanceCalculator.validarEliminacionIngreso(
+        totalIngresosActuales: totalIngresos,
+        totalEgresos: totalEgresos,
+        montoIngresoEliminado: m.monto,
+      );
+      if (!validacion.esValido) return validacion;
+    }
+
+    if (m.id != null) {
+      await _db.eliminarMovimiento(m.id!);
+      _movimientos.removeWhere((item) => item.id == m.id);
+      notifyListeners();
+      await _evaluarAlertaCritica();
+    }
+    return const ResultadoValidacionIngreso.valido();
+  }
+
   Future<void> eliminarMovimiento(int id) async {
     await _db.eliminarMovimiento(id);
     _movimientos.removeWhere((m) => m.id == id);
